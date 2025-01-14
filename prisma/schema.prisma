@@ -1,0 +1,898 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries,or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// ===========================
+// List of All Tables
+// ===========================
+// 1. User
+// 2. Shop
+// 3. Element
+// 4. Bundle
+// 5. Bundle_Element
+// 6.1. Element_Image
+// 6.2. Bundle_Image
+// 7. Element_Best_Use
+// 8. Category
+// 9.1. Element_Category
+// 9.2. Bundle_Category
+// 10. Tag
+// 11. Element_Tag
+// 12. Session
+// 13. Order
+// 14. Order_Item
+// 15. Coupon
+// 16. Affiliator
+// 17. Affiliator_Commission
+// 18. Affiliator_Withdraw_Request
+// 19. User_Pament_Method
+// 20. Pricing_Plan
+// 21. Pricing_Plan_Feature
+// 22. Shop_Subscription
+// 23. Faq
+// 24. Faq_Category
+// 25. Attachment
+// 26. Wishlist
+// 27. Bookmark
+// 28. Recent_Used_Element
+// 29. Support_Ticket
+// 30. Ticket_Message
+// 31. Contact_Request
+// ===========================
+
+// 1. User
+// ---------------------------
+model User {
+    id                           Int                           @id @default(autoincrement())
+    first_name                   String                        @db.VarChar(100)
+    last_name                    String                        @db.VarChar(100)
+    email                        String                        @unique @db.VarChar(255)
+    password                     String?                       @db.VarChar(255)
+    phone                        String?                       @db.VarChar(20)
+    profile_photo                String?
+    role                         UserRole                      @default(USER)
+    status                       UserStatus?                   @default(ACTIVE)
+    is_verified                  Boolean?                      @default(false)
+    is_shopify_user              Boolean?                      @default(false)
+    date_of_birth                DateTime?
+    country_code                 String?                       @db.VarChar(10)
+    country                      String?                       @db.VarChar(100)
+    address                      String?
+    website_url                  String?
+    social_handles               Json?                         @db.JsonB //All social handle of a Affiliators as JSONB type in a array with following format: [ { "platform": "FACEBOOK", "handle": "zahidshowrav" }, { "platform": "TWITTER", "handle": "zahidshowrav" } ] Following is the platform enum: FACEBOOK,TWITTER,INSTAGRAM,YOUTUBE,WHATSAPP,TELEGRAM,REDDIT,DEVTO,MEDIU
+    created_at                   DateTime                      @default(now())
+    updated_at                   DateTime                      @updatedAt
+    deleted_at                   DateTime?
+    deleted_by                   Int?
+    shops                        Shop[]
+    bundles                      Bundle[]
+    bundle_elements              Bundle_Element[]
+    elements                     Element[]
+    pricing_plans                Pricing_Plan[]
+    faqs                         Faq[]
+    faq_categories               Faq_Category[]
+    categories                   Category[]
+    tags                         Tag[]
+    support_tickets              Support_Ticket[]
+    ticket_messages              Ticket_Message[]
+    affiliators                  Affiliator[]
+    affiliator_commissions       Affiliator_Commission[]
+    affiliator_withdraw_requests Affiliator_Withdraw_Request[]
+    coupons                      Coupon[]
+    user_pament_methods          User_Pament_Method[]
+    team_members                 Team_Member[]
+}
+
+// 2. Shop
+// ---------------------------
+model Shop {
+    id                     Int                     @id @default(autoincrement())
+    uuid                   String                  @unique @db.Char(14) // Frontend generated 14 characters uuid by nonoid
+    user_id                Int
+    shopify_shop_id        Int // Shopify Shop ID
+    name                   String                  @db.VarChar(100)
+    domain                 String                  @db.VarChar(200)
+    status                 ShopStatus              @default(ACTIVE)
+    subscription_id        Int? // TODO:: R&D About Current Subscription
+    created_at             DateTime                @default(now())
+    updated_at             DateTime                @updatedAt
+    user                   User?                   @relation(fields: [user_id], references: [id])
+    current_subscription   Shop_Subscription?      @relation(fields: [subscription_id], references: [id])
+    orders                 Order[]
+    bookmarked_elements    Bookmark[]
+    wishlisted_elements    Wishlist[]
+    recent_used_elements   Recent_Used_Element[]
+    affiliator_commissions Affiliator_Commission[]
+}
+
+// 3. Element
+// ---------------------------
+model Element {
+    id                   Int                   @id @default(autoincrement())
+    name                 String                @db.VarChar(255)
+    slug                 String                @unique
+    description          String                @db.Text
+    featured_image       String
+    content              String                @db.Text
+    file_name            String                @unique @db.VarChar(255)
+    status               GenericStatus         @default(DRAFT)
+    type                 ElementType
+    price                Decimal               @db.Decimal(6, 2)
+    discount_type        DiscountType?         @default(FLAT)
+    discount_value       Decimal?              @db.Decimal(6, 2) // e.g. price is 9.50, discount_type is 'FLAT' and discount_value is 2.00, so that means discounted price will be shown 7.50
+    demo_url             String?
+    video_url            String?
+    version              String?               @default("1.0.0")
+    user_id              Int
+    wishlisted_count     Int?                  @default(0) // Total wishlisted by user
+    bookmarked_count     Int?                  @default(0) // Total bookmarked by user
+    added_theme_count    Int?                  @default(0) // Total added to theme by user (Recent_Used_Element)
+    view_count           Int?                  @default(0) // Total viewed by user
+    created_at           DateTime              @default(now())
+    updated_at           DateTime              @updatedAt
+    deleted_at           DateTime?
+    deleted_by           Int?
+    user                 User?                 @relation(fields: [user_id], references: [id])
+    images               Element_Image[]
+    best_Uses            Element_Best_Use[]
+    tags                 Element_Tag[]
+    categories           Element_Category[]
+    bundles              Bundle_Element[]
+    wishlisted_elements  Wishlist[]
+    bookmarked_elements  Bookmark[]
+    recent_used_elements Recent_Used_Element[]
+}
+
+// 4. Bundle
+// ---------------------------
+model Bundle {
+    id             Int               @id @default(autoincrement())
+    name           String            @db.VarChar(255)
+    slug           String            @unique
+    description    String            @db.Text
+    featured_image String
+    status         GenericStatus     @default(DRAFT)
+    type           BundleType
+    is_auto_price  Boolean?          @default(false)
+    price          Decimal           @db.Decimal(6, 2)
+    discount_type  DiscountType?     @default(FLAT)
+    discount_value Decimal?          @db.Decimal(6, 2) // e.g. price is 49.00, discount_type is 'FLAT' and discount_value is 11.00, so that means discounted price will be shown 38.00
+    demo_url       String?
+    video_url      String?
+    // old_purchase_discount_type  DiscountType? @default(FLAT) // TODO:: Remove after discussion
+    // old_purchase_discount_value Decimal?      @db.Decimal(6,2) // TODO:: Remove after discussion
+    version        String?           @default("1.0.0")
+    user_id        Int
+    view_count     Int?              @default(0) // Total viewed by user
+    created_at     DateTime          @default(now())
+    updated_at     DateTime          @updatedAt
+    deleted_at     DateTime?
+    deleted_by     Int?
+    user           User?             @relation(fields: [user_id], references: [id])
+    elements       Bundle_Element[]
+    images         Bundle_Image[]
+    categories     Bundle_Category[]
+}
+
+// 5. Bundle_Element
+// ---------------------------
+model Bundle_Element {
+    id           Int           @id @default(autoincrement())
+    bundle_id    Int
+    element_id   Int
+    element_type ElementType
+    status       GenericStatus @default(DRAFT)
+    user_id      Int
+    created_at   DateTime      @default(now())
+    updated_at   DateTime      @updatedAt
+    deleted_at   DateTime?
+    deleted_by   Int?
+    user         User?         @relation(fields: [user_id], references: [id])
+    bundle       Bundle?       @relation(fields: [bundle_id], references: [id])
+    element      Element?      @relation(fields: [element_id], references: [id])
+}
+
+// 6.1. Element_Image
+// ---------------------------
+model Element_Image {
+    id         Int      @id @default(autoincrement())
+    url        String
+    element_id Int
+    created_at DateTime @default(now())
+    element    Element? @relation(fields: [element_id], references: [id])
+}
+
+// 6.2. Bundle_Image
+// ---------------------------
+model Bundle_Image {
+    id         Int      @id @default(autoincrement())
+    url        String
+    bundle_id  Int
+    created_at DateTime @default(now())
+    bundle     Bundle?  @relation(fields: [bundle_id], references: [id])
+}
+
+// 7. Element_Best_Use
+// ---------------------------
+model Element_Best_Use {
+    id          Int      @id @default(autoincrement())
+    element_id  Int
+    title       String
+    description String
+    created_at  DateTime @default(now())
+    updated_at  DateTime @updatedAt
+    element     Element? @relation(fields: [element_id], references: [id])
+}
+
+// 8. Category
+// ---------------------------
+model Category {
+    id                 Int                @id @default(autoincrement())
+    name               String             @db.VarChar(80)
+    slug               String             @unique
+    description        String?
+    type               AssetType
+    status             GenericStatus      @default(DRAFT)
+    image              String?
+    banner             String?
+    user_id            Int
+    created_at         DateTime           @default(now())
+    updated_at         DateTime           @updatedAt
+    deleted_at         DateTime?
+    deleted_by         Int?
+    user               User?              @relation(fields: [user_id], references: [id])
+    element_categories Element_Category[]
+    bundle_categories  Bundle_Category[]
+}
+
+// 9.1. Element_Category 
+// ---------------------------
+model Element_Category {
+    id          Int       @id @default(autoincrement())
+    element_id  Int
+    category_id Int
+    created_at  DateTime  @default(now())
+    element     Element?  @relation(fields: [element_id], references: [id])
+    category    Category? @relation(fields: [category_id], references: [id])
+}
+
+// 9.2. Bundle_Category 
+// ---------------------------
+model Bundle_Category {
+    id          Int       @id @default(autoincrement())
+    bundle_id   Int
+    category_id Int
+    created_at  DateTime  @default(now())
+    bundle      Bundle?   @relation(fields: [bundle_id], references: [id])
+    category    Category? @relation(fields: [category_id], references: [id])
+}
+
+// 10. Tag 
+// ---------------------------
+model Tag {
+    id          Int           @id @default(autoincrement())
+    name        String        @db.VarChar(80)
+    slug        String        @unique
+    user_id     Int
+    description String?
+    image       String?
+    banner      String?
+    created_at  DateTime      @default(now())
+    updated_at  DateTime      @updatedAt
+    deleted_at  DateTime?
+    deleted_by  Int?
+    user        User?         @relation(fields: [user_id], references: [id])
+    elements    Element_Tag[]
+}
+
+// 11. Element_Tag 
+// ---------------------------
+model Element_Tag {
+    id         Int      @id @default(autoincrement())
+    element_id Int
+    tag_id     Int
+    created_at DateTime @default(now())
+    tag        Tag?     @relation(fields: [tag_id], references: [id])
+    element    Element? @relation(fields: [element_id], references: [id])
+}
+
+// 12. Session 
+// ---------------------------
+model Session {
+    id       Int     @id
+    shop     String
+    state    String?
+    isOnline Boolean
+    scope    String
+    userId   Int?
+}
+
+// 13. Order 
+// ---------------------------
+model Order {
+    id                     Int                     @id @default(autoincrement())
+    uuid                   String                  @unique @db.Char(14) // Frontend generated 14 characters uuid by nonoid
+    shop_id                Int
+    asset_type             AssetType
+    status                 OrderStatus             @default(PENDING)
+    sub_total              Decimal                 @db.Decimal(7, 2) // The sum of the main price of all Order Items. [NOTE: If the ordered asset is a bundle and if Admin has disabled auto pricing for this bundle,then it has a fixed price. Then store that Fixed main price.]
+    discounted_amout       Decimal?                @db.Decimal(7, 2) // The sum of the discounted amount of all Order Items. [NOTE: If the ordered asset is a bundle and if it has a Flat or Percent discount. Then calculate and store the bundle's discounted amount.]
+    coupon_id              Int?
+    coupon_code            String?                 @db.VarChar(20)
+    coupon_discount_type   DiscountType?           @default(FLAT)
+    coupon_discount_value  Decimal?                @db.Decimal(6, 2) // The discount amount by using this coupon //  e.g. price is 49.00, discount_type is 'FLAT' and discount_value is 11.00, so that means discounted price will be shown 38.00
+    grand_total            Decimal                 @db.Decimal(7, 2) // Grand Total is the final amount that shop owner needs to pay. [Grand Total = Sub Total - (Discounted Amount Value + Coupon Discount Value)]
+    affiliated_by          Int?
+    affiliated_commission  Decimal?                @db.Decimal(6, 2) // The commission amount of Affiliator
+    created_at             DateTime                @default(now())
+    updated_at             DateTime                @updatedAt
+    shop                   Shop?                   @relation(fields: [shop_id], references: [id])
+    coupon                 Coupon?                 @relation(fields: [coupon_id], references: [id])
+    order_items            Order_Item[]
+    affiliator_commissions Affiliator_Commission[]
+}
+
+// 14. Order_Item
+// ---------------------------
+model Order_Item {
+    id               Int           @id @default(autoincrement())
+    order_id         Int
+    asset_id         Int
+    asset_type       AssetType
+    price            Decimal       @db.Decimal(6, 2)
+    discounted_price Decimal?      @db.Decimal(6, 2) // Price after substructed discount amount
+    discount_type    DiscountType? @default(FLAT)
+    discount_value   Decimal?      @db.Decimal(6, 2)
+    order_bundle_id  Int? // If order asset type is "BUNDLE".
+    order            Order?        @relation(fields: [order_id], references: [id])
+}
+
+// 15. Coupon
+// ---------------------------
+model Coupon {
+    id                         Int                     @id @default(autoincrement())
+    code                       String                  @unique @db.VarChar(20)
+    status                     CouponStatus            @default(INACTIVE)
+    expired_at                 DateTime?
+    max_total_applied          Int?                    @default(-1) // Expired Date "NULL" means, -1 no maximum limitation to apply this coupon lifetime
+    max_applied_by_shop        Int?                    @default(-1) // The maximum limit of applying a coupon by a shop, -1 means unlimited
+    discount_type              DiscountType?           @default(FLAT)
+    discount_value             Decimal?                @db.Decimal(6, 2) // This is the discount amount
+    min_order_amount           Decimal?                @db.Decimal(6, 2) // The minimum Order Amount to claim Coupon. "NULL" means no minimum amount
+    max_discount_limit         Decimal?                @default(-1) @db.Decimal(6, 2) // The limit of maximum discount amount by applying this coupon. -1 means no limit.
+    is_apply_on_asset_discount Boolean?                @default(true) // Is the coupon discount calculation applied on Asset discount price? 1. If true, coupon will apply on price discount of Asset. 2. If false, coupon will apply on main price of Asset.
+    affiliated_by              Int? // If the Coupon is dedicated for a Affiliator, then the Id of Affiliator
+    commission_type            DiscountType?           @default(FLAT)
+    commission_value           Decimal?                @db.Decimal(6, 2)
+    user_id                    Int
+    created_at                 DateTime                @default(now())
+    updated_at                 DateTime                @updatedAt
+    deleted_at                 DateTime?
+    deleted_by                 Int?
+    affiliator                 Affiliator?             @relation(fields: [affiliated_by], references: [id])
+    user                       User?                   @relation(fields: [user_id], references: [id])
+    orders                     Order[]
+    affiliator_commissions     Affiliator_Commission[]
+}
+
+// 16. Affiliator
+// ---------------------------
+model Affiliator {
+    id                           Int                           @id @default(autoincrement())
+    uuid                         String                        @unique @db.Char(14) // Frontend generated 14 characters uuid by nonoid
+    user_id                      Int
+    invited_by                   Int?
+    type                         AffiliatorType
+    type_other                   String?
+    status                       AffiliatorStatus              @default(PENDING)
+    total_earned                 Decimal?                      @db.Decimal(10, 2) // Total Commission earned by an Affiliator
+    total_paid                   Decimal?                      @db.Decimal(10, 2) // The total commission paid to the Affiliator
+    current_coupon_id            Int?
+    created_at                   DateTime                      @default(now())
+    updated_at                   DateTime                      @updatedAt
+    deleted_at                   DateTime?
+    deleted_by                   Int?
+    user                         User?                         @relation(fields: [user_id], references: [id])
+    affiliator_withdraw_requests Affiliator_Withdraw_Request[]
+    affiliator_commissions       Affiliator_Commission[]
+    coupons                      Coupon[]
+}
+
+// 17. Affiliator_Commission
+// ---------------------------
+model Affiliator_Commission {
+    id                    Int              @id @default(autoincrement())
+    uuid                  String           @unique @db.Char(14) // Frontend generated 14 characters uuid by nonoid
+    affiliator_id         Int
+    user_id               Int
+    order_id              Int?
+    shop_id               Int?
+    coupon_id             Int?
+    coupon_code           String?          @db.VarChar(20)
+    order_amout           Decimal?         @db.Decimal(7, 2)
+    coupon_discount_type  DiscountType?    @default(FLAT)
+    coupon_discount_value Decimal?         @db.Decimal(6, 2) // The discount amount by using this coupon
+    commission_type       DiscountType     @default(FLAT)
+    commission_value      Decimal          @db.Decimal(6, 2)
+    amount                Decimal          @db.Decimal(6, 2) // The Calculated Commission Amount
+    status                CommissionStatus @default(APPROVED)
+    created_at            DateTime         @default(now())
+    updated_at            DateTime         @updatedAt
+    affiliator            Affiliator?      @relation(fields: [affiliator_id], references: [id])
+    user                  User?            @relation(fields: [user_id], references: [id])
+    order                 Order?           @relation(fields: [order_id], references: [id])
+    shop                  Shop?            @relation(fields: [shop_id], references: [id])
+    coupon                Coupon?          @relation(fields: [coupon_id], references: [id])
+}
+
+// 18. Affiliator_Withdraw_Request
+// ---------------------------
+model Affiliator_Withdraw_Request {
+    id                     Int                      @id @default(autoincrement())
+    uuid                   String                   @unique @db.Char(14) // Frontend generated 14 characters uuid by nonoid
+    affiliator_id          Int
+    status                 CommissionWithdrawStatus @default(PENDING)
+    amount                 Decimal                  @db.Decimal(8, 2)
+    payment_method_id      Int
+    payment_method         PaymentMethod
+    payment_method_details Json                     @db.JsonB
+    assignee               Int?
+    note                   String?                  @db.VarChar(255) // note by affiliator
+    reject_reason          String?                  @db.VarChar(255) // reason of rejection by assignee user
+    created_at             DateTime                 @default(now())
+    updated_at             DateTime                 @updatedAt
+    affiliator             Affiliator?              @relation(fields: [affiliator_id], references: [id])
+    payment_method_detail  User_Pament_Method?      @relation(fields: [payment_method_id], references: [id])
+    assigned_user          User?                    @relation(fields: [assignee], references: [id])
+}
+
+// 19. User_Pament_Method
+// ---------------------------
+model User_Pament_Method {
+    id                           Int                           @id @default(autoincrement())
+    user_id                      Int
+    method                       PaymentMethod
+    details                      Json                          @db.JsonB
+    is_default                   Boolean                       @default(false) //One of the Paymen Methods will be default
+    created_at                   DateTime                      @default(now())
+    updated_at                   DateTime                      @updatedAt
+    deleted_at                   DateTime? // User cannot delete the payment method if is_default or has any pending withdraw request
+    user                         User?                         @relation(fields: [user_id], references: [id])
+    affiliator_withdraw_requests Affiliator_Withdraw_Request[]
+}
+
+// 20. Pricing_Plan
+// ---------------------------
+model Pricing_Plan {
+    id                      Int                    @id @default(autoincrement())
+    name                    String                 @db.VarChar(80)
+    tagline                 String
+    description             String
+    type                    PricingPlanType        @unique
+    is_recommended          Boolean                @default(false)
+    is_popular              Boolean                @default(false)
+    price                   Decimal                @db.Decimal(6, 2)
+    discounted_price        Decimal?               @db.Decimal(6, 2)
+    yearly_discounted_price Decimal?               @db.Decimal(6, 2)
+    trial_period            Int?                   @db.SmallInt
+    user_id                 Int
+    created_at              DateTime               @default(now())
+    updated_at              DateTime               @updatedAt
+    deleted_at              DateTime?
+    deleted_by              Int?
+    user                    User?                  @relation(fields: [user_id], references: [id])
+    subscriptions           Shop_Subscription[]
+    pricing_plan_features   Pricing_Plan_Feature[]
+}
+
+// 21. Pricing_Plan_Feature
+// ---------------------------
+model Pricing_Plan_Feature {
+    id           Int           @id @default(autoincrement())
+    plan_id      Int
+    title        String
+    type         String? // TODO:: Forgot about this field, if not necessary remove it
+    description  String?
+    pricing_plan Pricing_Plan? @relation(fields: [plan_id], references: [id])
+}
+
+// 22. Shop_Subscription
+// ---------------------------
+model Shop_Subscription {
+    id             Int                    @id @default(autoincrement())
+    uuid           String                 @unique @db.Char(14) // Frontend generated 14 characters uuid by nonoid
+    shop_id        Int
+    plan_id        Int
+    plan_type      PricingPlanType        @default(FREE)
+    status         SubscriptionStatus     @default(PENDING)
+    created_at     DateTime               @default(now())
+    ended_at       DateTime?
+    ended_type     SubscriptionEndedType?
+    updated_at     DateTime               @updatedAt
+    amount         Decimal                @db.Decimal(8, 2)
+    payment_method PaymentMethod          @default(SHOPIFY)
+    // shop           Shop?                  @relation(fields: [shop_id], references: [id]) // TODO:: R&D about this relation, see Shop table model
+    plan           Pricing_Plan?          @relation(fields: [plan_id], references: [id])
+    shops          Shop[]
+}
+
+// 23. Faq
+// ---------------------------
+model Faq {
+    id          Int           @id @default(autoincrement())
+    user_id     Int
+    question    String
+    answer      String        @db.VarChar(1000)
+    status      FaqStatus     @default(DRAFT)
+    category_id Int
+    created_at  DateTime      @default(now())
+    updated_at  DateTime      @updatedAt
+    deleted_at  DateTime?
+    deleted_by  Int?
+    user        User?         @relation(fields: [user_id], references: [id])
+    category    Faq_Category? @relation(fields: [category_id], references: [id])
+}
+
+// 24. Faq_Category
+// ---------------------------
+model Faq_Category {
+    id          Int       @id @default(autoincrement())
+    name        String    @db.VarChar(80)
+    user_id     Int
+    description String?
+    banner      String?
+    created_at  DateTime  @default(now())
+    updated_at  DateTime  @updatedAt
+    deleted_at  DateTime?
+    deleted_by  Int?
+    user        User?     @relation(fields: [user_id], references: [id])
+    faqs        Faq[]
+}
+
+// 25. Attachment
+// ---------------------------
+model Attachment {
+    id         Int               @id @default(autoincrement())
+    uuid       String            @unique @db.Char(14) // Frontend generated 14 characters uuid by nonoid
+    url        String
+    type       AttachmentType    @default(IMAGE)
+    ref_id     Int
+    ref_type   AttachmentRefType
+    created_at DateTime          @default(now())
+}
+
+// 26. Wishlist
+// ---------------------------
+model Wishlist {
+    id           Int         @id @default(autoincrement())
+    shop_id      Int
+    element_id   Int
+    element_type ElementType
+    created_at   DateTime    @default(now())
+    shop         Shop?       @relation(fields: [shop_id], references: [id])
+    element      Element?    @relation(fields: [element_id], references: [id])
+}
+
+// 27. Bookmark
+// ---------------------------
+model Bookmark {
+    id           Int         @id @default(autoincrement())
+    shop_id      Int
+    element_id   Int
+    element_type ElementType
+    created_at   DateTime    @default(now())
+    shop         Shop?       @relation(fields: [shop_id], references: [id])
+    element      Element?    @relation(fields: [element_id], references: [id])
+}
+
+// 28. Recent_Used_Element
+// ---------------------------
+model Recent_Used_Element {
+    id           Int         @id @default(autoincrement())
+    shop_id      Int
+    element_id   Int
+    element_type ElementType
+    created_at   DateTime    @default(now())
+    shop         Shop?       @relation(fields: [shop_id], references: [id])
+    element      Element?    @relation(fields: [element_id], references: [id])
+}
+
+// 29. Support_Ticket
+// ---------------------------
+model Support_Ticket {
+    id              Int              @id @default(autoincrement())
+    uuid            String           @unique @db.Char(14) // Frontend generated 14 characters uuid by nonoid
+    user_id         Int
+    ref_id          Int
+    ref_type        SupportRefType
+    criteria        SupportCriteria
+    reason          String
+    description     String           @db.VarChar(2000)
+    status          SupportStatus?   @default(PENDING)
+    label           SupportLabel?    @default(SEVERITY_1)
+    assignee        Int?
+    assigned_at     DateTime?
+    created_at      DateTime         @default(now())
+    updated_at      DateTime         @updatedAt
+    user            User?            @relation(fields: [user_id], references: [id])
+    ticket_messages Ticket_Message[]
+}
+
+// 30. Ticket_Message
+// ---------------------------
+model Ticket_Message {
+    id             Int             @id @default(autoincrement())
+    ticket_id      Int
+    user_id        Int
+    message        String          @db.VarChar(1000)
+    created_at     DateTime        @default(now())
+    updated_at     DateTime        @updatedAt
+    user           User?           @relation(fields: [user_id], references: [id])
+    support_ticket Support_Ticket? @relation(fields: [ticket_id], references: [id])
+}
+
+// 31. Contact_Request
+// ---------------------------
+model Contact_Request {
+    id           Int            @id @default(autoincrement())
+    message      String         @db.VarChar(2000)
+    name         String         @db.VarChar(100)
+    email        String         @unique @db.VarChar(255)
+    phone        String         @db.VarChar(20)
+    country_code String         @db.VarChar(10)
+    country      String?        @db.VarChar(100)
+    status       ContactStatus? @default(PENDING)
+    created_at   DateTime       @default(now())
+    updated_at   DateTime       @updatedAt
+}
+
+// 32. Team_Member
+// ---------------------------
+model Team_Member {
+    id           Int            @id @default(autoincrement())
+    user_id      Int
+    role         TeamMemberRole @default(MANAGER)
+    designation  String?
+    badge        String?
+    invited_by   Int?
+    onboarded_at DateTime?
+    created_at   DateTime       @default(now())
+    updated_at   DateTime       @updatedAt
+    user         User?          @relation(fields: [user_id], references: [id])
+}
+
+// ===========================
+// List of Enums
+// ===========================
+// 1. UserRole
+// 2. UserStatus
+// 3. ShopStatus
+// 4. DiscountType
+// 5. TeamMemberRole
+// 6. BundleType
+// 7. ElementType
+// 8. GenericStatus
+// 9. AssetType
+// 10. OrderStatus
+// 11. CouponStatus
+// 12. AffiliatorType
+// 13. AffiliatorStatus
+// 14. CommissionStatus
+// 15. CommissionWithdrawStatus
+// 16. PaymentMethod
+// 17. PricingPlanType
+// 18. SubscriptionPaidType
+// 19. FaqStatus
+// 20. ContactStatus
+// 21. AttachmentType
+// 22. AttachmentRefType
+// 23. SupportRefType
+// 24. SupportCriteria
+// 25. SupportStatus
+// ===========================
+
+enum UserRole {
+    SUPER_USER
+    ADMIN
+    TEAM_MEMBER
+    SHOP_OWNER
+    AFFILIATOR
+    USER
+}
+
+enum UserStatus {
+    ACTIVE
+    SUSPENDED
+}
+
+enum ShopStatus {
+    ACTIVE
+    SUSPENDED
+}
+
+enum DiscountType {
+    FLAT
+    PERCENT
+}
+
+enum TeamMemberRole {
+    ADMINISTRATOR
+    MANAGER
+    DEVELOPER
+    DESIGNER
+    SUPPORT
+    MARKETEER
+}
+
+enum BundleType {
+    SECTION
+    BLOCK
+    TEMPLATE
+    MIXED
+}
+
+enum ElementType {
+    SECTION
+    BLOCK
+    TEMPLATE
+}
+
+enum GenericStatus {
+    DRAFT
+    PUBLISHED
+    INACTIVE
+}
+
+enum AssetType {
+    SECTION
+    BLOCK
+    TEMPLATE
+    BUNDLE
+}
+
+enum OrderStatus {
+    PENDING
+    COMPLETED
+    FAILED
+    REFUNDED
+}
+
+enum CouponStatus {
+    ACTIVE
+    INACTIVE
+    SUSPENDED
+}
+
+enum AffiliatorType {
+    INFLUENCER
+    TECH_GURU
+    YOUTUBER
+    DEVELOPER
+    MENTOR
+    OTHER
+}
+
+enum AffiliatorStatus {
+    PENDING
+    APPROVED
+    REJECTED
+    SUSPENDED
+}
+
+enum CommissionStatus {
+    APPROVED
+    CANCELED
+    REFUNDED
+}
+
+enum CommissionWithdrawStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+enum PaymentMethod {
+    BANK
+    STRIPE
+    PAYPAL
+    PAYONEER
+    SHOPIFY
+}
+
+enum PricingPlanType {
+    FREE
+    PRO
+    ELITE
+    ENTERPRISE
+}
+
+enum SubscriptionStatus {
+    PENDING // When shop started paid subscription but not paid yet 
+    ON_GOING // If the subscription is on going
+    ENDED // If the subscription is ended
+}
+
+enum SubscriptionEndedType {
+    DECLAINED // If paid subscription payment declained by User, applicable for free and recurring plan
+    TRIAL_CENCELLED // If recurring subscription trial cancelled by User, applicable only for recurring plan 
+    TRIAL_SUCCESS // If recurring subscription successfully completed trial period and subscribe to the recurring plan, applicable for free and recurring plan
+    FAILED_PAYMENT // If recurreing subscription failed to pay by User, applicable only for recurring plan
+    REFUNED // If refunded paid subscription to user, applicable only for elite plan
+    UPGRADED // If User upgraded to next plan, applicable for free and recurring plan
+    DOWNGRADED // If User downgraded to Free, applicable only for recurring plan
+}
+
+enum FaqStatus {
+    DRAFT
+    PUBLISHED
+}
+
+enum ContactStatus {
+    PENDING
+    ON_REVIEW
+    APPROVED
+    DENIED
+}
+
+enum AttachmentType {
+    IMAGE
+    VIDEO
+    PDF
+}
+
+enum AttachmentRefType {
+    SUPPORT
+    TICKET_MESSAGE
+    CONTACT
+    WITHDRAW_REQUEST
+}
+
+enum SupportRefType {
+    SHOP
+    AFFILIATE
+    GENERAL
+}
+
+enum SupportCriteria {
+    GENERAL
+    TECHNICAL
+    HIRE
+    PURCHASE
+    FEATURE_REQUEST
+    BUG
+    DESIGN_ISSUE
+    ADD_TO_THEME_ISSUE
+    AFFILIATION
+    COUPON
+    COMMISSION_WITHDRAW
+    REFUND
+    OTHERS
+}
+
+enum SupportStatus {
+    PENDING
+    ON_GOING
+    APPROVED
+    RESOLVED
+    DENIED
+    CLOSED
+}
+
+enum SupportLabel {
+    SEVERITY_1
+    SEVERITY_2
+    SEVERITY_3
+}
