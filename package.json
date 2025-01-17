@@ -9,7 +9,7 @@
     "devDependencies": {
         "@prisma/client": "^4.15.0",
         "dotenv-cli": "^7.2.1",
-        "prisma": "^4.15.0"
+        "prisma": "^5.11.0"
     },
     "peerDependencies": {
         "@prisma/client": "*",
