@@ -1,0 +1,25 @@
+{
+    "name": "@sectionify/db",
+    "version": "0.0.1",
+    "description": "Shared Prisma Client",
+    "scripts": {
+        "generate": "npx prisma generate",
+        "postinstall": "npm run generate"
+    },
+    "devDependencies": {
+        "@prisma/client": "^4.15.0",
+        "prisma": "^4.15.0",
+        "prisma-docs-generator": "^0.8.0"
+    },
+    "peerDependencies": {
+        "@prisma/client": "*",
+        "prisma": "*"
+    },
+    "main": "index.js",
+    "types": "index.d.ts",
+    "files": [
+        "index.js",
+        "index.d.ts",
+        "prisma/schema.prisma"
+    ]
+}
