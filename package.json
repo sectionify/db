@@ -1,5 +1,5 @@
 {
-    "name": "@sectionify/prisma-data-layer",
+    "name": "@sectionify/db",
     "version": "0.0.1",
     "description": "Shared Prisma Client",
     "scripts": {
