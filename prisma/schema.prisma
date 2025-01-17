@@ -312,12 +312,14 @@ model Element_Tag {
 // 12. Session 
 // ---------------------------
 model Session {
-    id       Int     @id
-    shop     String
-    state    String?
-    isOnline Boolean
-    scope    String
-    userId   Int?
+  id          String    @id
+  shop        String
+  state       String
+  isOnline    Boolean   @default(false)
+  scope       String?
+  expires     DateTime?
+  accessToken String
+  userId      BigInt?
 }
 
 // 13. Order 
