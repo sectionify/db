@@ -102,7 +102,7 @@ model Shop {
     id                     Int                     @id @default(autoincrement())
     uuid                   String                  @unique @db.Char(14) // Frontend generated 14 characters uuid by nonoid
     user_id                Int
-    shopify_shop_id        Int // Shopify Shop ID
+    shopify_shop_id        Int                     @unique
     name                   String                  @db.VarChar(100)
     domain                 String                  @db.VarChar(200)
     status                 ShopStatus              @default(ACTIVE)
