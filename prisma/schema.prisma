@@ -484,26 +484,28 @@ model User_Pament_Method {
 // 20. Pricing_Plan
 // ---------------------------
 model Pricing_Plan {
-    id                      Int                    @id @default(autoincrement())
-    name                    String                 @db.VarChar(80)
-    tagline                 String
-    description             String
-    type                    PricingPlanType        @unique
-    status                  GenericStatus          @default(PUBLISHED)
-    is_recommended          Boolean                @default(false)
-    is_popular              Boolean                @default(false)
-    price                   Decimal                @db.Decimal(6, 2)
-    discounted_price        Decimal?               @db.Decimal(6, 2)
-    yearly_discounted_price Decimal?               @db.Decimal(6, 2)
-    trial_period            Int?                   @db.SmallInt
-    user_id                 Int
-    created_at              DateTime               @default(now())
-    updated_at              DateTime               @updatedAt
-    deleted_at              DateTime?
-    deleted_by              Int?
-    user                    User?                  @relation(fields: [user_id], references: [id])
-    subscriptions           Shop_Subscription[]
-    pricing_plan_features   Pricing_Plan_Feature[]
+    id                    Int                    @id @default(autoincrement())
+    name                  String                 @db.VarChar(80)
+    slug                  String                 @unique
+    tagline               String
+    description           String
+    type                  PricingPlanType        @default(FREE)
+    status                GenericStatus          @default(PUBLISHED)
+    is_recommended        Boolean                @default(false)
+    is_popular            Boolean                @default(false)
+    price                 Decimal                @db.Decimal(6, 2)
+    discounted_price      Decimal?               @db.Decimal(6, 2)
+    duration              Int? // duration in days
+    trial_period          Int?                   @db.SmallInt
+    order                 Int                    @db.SmallInt
+    user_id               Int
+    created_at            DateTime               @default(now())
+    updated_at            DateTime               @updatedAt
+    deleted_at            DateTime?
+    deleted_by            Int?
+    user                  User?                  @relation(fields: [user_id], references: [id])
+    subscriptions         Shop_Subscription[]
+    pricing_plan_features Pricing_Plan_Feature[]
 }
 
 // 21. Pricing_Plan_Feature
@@ -822,8 +824,8 @@ enum PaymentMethod {
 
 enum PricingPlanType {
     FREE
-    PRO
-    ELITE
+    RECURRING
+    LIFETIME
     ENTERPRISE
 }
 
