@@ -8,8 +8,6 @@ generator client {
     provider = "prisma-client-js"
 }
 
-
-
 datasource db {
     provider = "postgresql"
     url      = env("DATABASE_URL")
@@ -312,21 +310,21 @@ model Element_Tag {
 // 12. Session 
 // ---------------------------
 model Session {
-  id            String    @id
-  shop          String
-  state         String
-  isOnline      Boolean   @default(false)
-  scope         String?
-  expires       DateTime?
-  accessToken   String
-  userId        BigInt?
-  firstName     String?
-  lastName      String?
-  email         String?
-  accountOwner  Boolean?
-  locale        String?
-  collaborator  Boolean?
-  emailVerified Boolean?
+    id            String    @id
+    shop          String
+    state         String
+    isOnline      Boolean   @default(false)
+    scope         String?
+    expires       DateTime?
+    accessToken   String
+    userId        BigInt?
+    firstName     String?
+    lastName      String?
+    email         String?
+    accountOwner  Boolean?
+    locale        String?
+    collaborator  Boolean?
+    emailVerified Boolean?
 }
 
 // 13. Order 
@@ -491,6 +489,7 @@ model Pricing_Plan {
     tagline                 String
     description             String
     type                    PricingPlanType        @unique
+    status                  GenericStatus          @default(PUBLISHED)
     is_recommended          Boolean                @default(false)
     is_popular              Boolean                @default(false)
     price                   Decimal                @db.Decimal(6, 2)
