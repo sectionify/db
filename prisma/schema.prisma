@@ -496,7 +496,6 @@ model Pricing_Plan {
     price                   Decimal                @db.Decimal(6, 2)
     discounted_price        Decimal?               @db.Decimal(6, 2)
     yearly_discounted_price Decimal?               @db.Decimal(6, 2)
-    duration                Int? // duration in days
     trial_period            Int?                   @db.SmallInt
     order                   Int                    @db.SmallInt
     user_id                 Int
@@ -529,6 +528,7 @@ model Shop_Subscription {
     plan_id        Int
     plan_type      PricingPlanType        @default(FREE)
     status         SubscriptionStatus     @default(PENDING)
+    interval       SubscriptionInterval   @default(NO_INTERVAL)
     created_at     DateTime               @default(now())
     ended_at       DateTime?
     ended_type     SubscriptionEndedType?
@@ -834,6 +834,14 @@ enum SubscriptionStatus {
     PENDING // When shop started paid subscription but not paid yet 
     ON_GOING // If the subscription is on going
     ENDED // If the subscription is ended
+}
+
+enum SubscriptionInterval {
+    NO_INTERVAL // If subscription has no interval (like "FREE" & "LIFETIME" plan) 
+    ONE_MONTH // If the subscription has one month interval
+    QUARTER_YEAR // If the subscription has three months interval
+    HALF_YEAR // If the subscription has six months interval
+    ONE_YEAR // If the subscription has one year interval
 }
 
 enum SubscriptionEndedType {
