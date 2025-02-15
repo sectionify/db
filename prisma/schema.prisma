@@ -845,7 +845,7 @@ enum SubscriptionInterval {
 }
 
 enum SubscriptionEndedType {
-    DECLAINED // If paid subscription payment declained by User, applicable for free and recurring plan
+    DECLINED // If paid subscription payment DECLINED by User, applicable for free and recurring plan
     TRIAL_CENCELLED // If recurring subscription trial cancelled by User, applicable only for recurring plan 
     TRIAL_SUCCESS // If recurring subscription successfully completed trial period and subscribe to the recurring plan, applicable for free and recurring plan
     FAILED_PAYMENT // If recurreing subscription failed to pay by User, applicable only for recurring plan
