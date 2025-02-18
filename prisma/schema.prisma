@@ -525,6 +525,7 @@ model Shop_Subscription {
     id             Int                    @id @default(autoincrement())
     uuid           String                 @unique @db.Char(14) // Frontend generated 14 characters uuid by nonoid
     shop_id        Int
+    shopify_subscription_id String?
     plan_id        Int
     plan_type      PricingPlanType        @default(FREE)
     status         SubscriptionStatus     @default(PENDING)
